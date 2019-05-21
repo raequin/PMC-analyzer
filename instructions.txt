@@ -1,0 +1,8 @@
+### Plotting library
+# http://stahlke.org/dan/gnuplot-iostream/
+# (from this directory)
+mkdir lib && cd lib
+git clone https://github.com/dstahlke/gnuplot-iostream.git
+mkdir build && cd build
+cmake ..
+make
