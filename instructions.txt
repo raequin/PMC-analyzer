@@ -3,6 +3,7 @@
 # (from this directory)
 mkdir lib && cd lib
 git clone https://github.com/dstahlke/gnuplot-iostream.git
+cd ..
 mkdir build && cd build
 cmake ..
 make
