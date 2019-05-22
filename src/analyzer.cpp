@@ -23,6 +23,11 @@ struct Visit {
     visit_tm = visit_tm_;
     course_number = course_number_;
   }
+
+  void calc_date() {
+    std::time_t time_temp = std::mktime(&visit_tm);
+    visit_tm = *std::localtime(&time_temp);
+  }
 };
 
 
@@ -83,9 +88,9 @@ std::tm ConvertCellToTM(string cell) {
   else
     ret.tm_hour = (0 == date_time_AMPM[2].compare("AM")) ? 0 : 12;
   
-  ret.tm_mday = std::stoi(m_d_y[1]);
-  ret.tm_mon = std::stoi(m_d_y[0]);
-  ret.tm_year = std::stoi(m_d_y[2]);
+  ret.tm_mday = std::stoi(m_d_y[1]);  // 1-based year
+  ret.tm_mon = std::stoi(m_d_y[0]) - 1;  // 0-based month
+  ret.tm_year = std::stoi(m_d_y[2]) - 1900;  // Years since 1900
 
   return ret;
 }
@@ -172,13 +177,16 @@ int main(int argc,  char **argv)
 	if (0 == tutees[i].name.compare(this_name)) {  // Tutee already exists
 	  is_new_tutee = false;
 	  tutees[i].visits.push_back(Visit(ConvertCellToTM(row[0]), row[7]));  // Add Visit
+	  tutees[i].visits.back().calc_date();
 	  
 	  // Debug
 	  /*
 	  cout << "Existing tutee:\t" << this_name << "\tThis visit:\t" << row[0] << "\t" << row[7] << "\t" << tutees[i].visits.size() << " visits" << std::endl;
 	  cout << tutees[i].id_number << "\t" << tutees[i].name << "\t" << tutees[i].email << "\t" << tutees[i].classification << "\t" << tutees[i].major << std::endl;
 	  for (auto v : tutees[i].visits)
-	    cout << v.course_number << "\t" << v.visit_tm.tm_hour << "h" << v.visit_tm.tm_min << "m\t" << v.visit_tm.tm_mon << "/" << v.visit_tm.tm_mday << std::endl;
+	    cout << v.course_number << "\t" << v.visit_tm.tm_hour << "h" << v.visit_tm.tm_min << "m\t" << v.visit_tm.tm_mon << "/"
+		 << v.visit_tm.tm_mday << "/" << v.visit_tm.tm_year << "\t" << v.visit_tm.tm_wday << std::endl;
+	  cout << std::endl;
 	  */
 	  break;  // Quit searching for tutee name
 	}
@@ -188,9 +196,21 @@ int main(int argc,  char **argv)
 	//	cout << "New tutee:\t" << this_name << std::endl;  // Debug
 	tutees.push_back(Tutee(row[2], this_name, row[12], row[13], row[14]));  // Construct Tutee and add to tutees
 	tutees.back().visits.push_back(Visit(ConvertCellToTM(row[0]), row[7]));  // Add Visit to visits
+	tutees.back().visits.back().calc_date();
       }
     }  // End treatment of non-tutor row
   }  // End loop through all rows
+
+
+  for (auto t : tutees) {
+    cout << t.id_number << "\t" << t.name << "\t" << std::endl;
+    
+    for (auto v : t.visits)
+      cout << v.course_number << "\t" << v.visit_tm.tm_hour << "h" << v.visit_tm.tm_min << "m\t" << v.visit_tm.tm_mon << "/"
+		 << v.visit_tm.tm_mday << "/" << v.visit_tm.tm_year << "\t" << v.visit_tm.tm_wday << std::endl;
+
+    cout << std::endl;
+  }
   
 
   /*
