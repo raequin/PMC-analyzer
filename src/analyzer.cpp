@@ -14,6 +14,15 @@ using std::string;
 struct Visit {
   std::tm visit_tm;
   string course_number;
+
+  Visit() {
+    course_number = "";
+  }
+
+  Visit(std::tm visit_tm_, string course_number_) {
+    visit_tm = visit_tm_;
+    course_number = course_number_;
+  }
 };
 
 
@@ -25,7 +34,61 @@ struct Tutee {
   string classification;
   string major;
   std::vector<Visit> visits;
+
+  Tutee() {
+    id_number = "";
+    name = "";
+    email = "";
+    classification = "";
+    major = "";
+  }
+
+  Tutee(string id_number_, string name_, string email_, string classification_, string major_) {
+    id_number = id_number_;
+    name = name_;
+    email = email_;
+    classification = classification_;
+    major = major_;
+  }
 };
+
+
+
+std::vector<string> split(string str, char delimiter) {
+  std::vector<string> ret;
+  std::stringstream ss(str); // Turn the string into a stream.
+  string tok;
+ 
+  while(getline(ss, tok, delimiter)) {
+    ret.push_back(tok);
+  }
+ 
+  return ret;
+}
+
+
+
+std::tm ConvertCellToTM(string cell) {
+  std::tm ret;
+  std::vector<string> date_time_AMPM = split(cell, ' ');
+  std::vector<string> m_d_y = split(date_time_AMPM[0], '/');
+  std::vector<string> hour_minute = split(date_time_AMPM[1], ':');
+
+  ret.tm_sec = 0;
+  ret.tm_min = std::stoi(hour_minute[1]);
+  
+  if (12 != std::stoi(hour_minute[0]))
+    ret.tm_hour = (0 == date_time_AMPM[2].compare("AM")) ? (std::stoi(hour_minute[0])) : (std::stoi(hour_minute[0]) + 12);
+  
+  else
+    ret.tm_hour = (0 == date_time_AMPM[2].compare("AM")) ? 0 : 12;
+  
+  ret.tm_mday = std::stoi(m_d_y[1]);
+  ret.tm_mon = std::stoi(m_d_y[0]);
+  ret.tm_year = std::stoi(m_d_y[2]);
+
+  return ret;
+}
 
 
 
@@ -79,16 +142,19 @@ int main(int argc,  char **argv)
   std::vector<std::string> tutor_names  = {"Wiggins, Robert","Lin, Min Chih", "Williams, Bradley", "Marshall, Matthew"};
   
   string complete_path(argv[1]);
+  string analysis_mode(argv[2]);
   std::ifstream file(complete_path);
   CheckinsFileRow row;
 
-  // Skip the unused lines of the file
+  /*
+   * Extract data from file
+   */
   for (int i = 0; i < initial_line_num; i++)
-    file >> row;
+    file >> row;  // Skip the unused lines of the file
 
   // Place data into vector of cells, one row at a time
   while (file >> row) {
-    string this_name (row[3].begin()+1, row[3].end()-1);
+    string this_name (row[3].begin()+1, row[3].end()-1);  // Remove quotation marks around name
     
     // Ensure row is not for a tutor swipe created when testing the kiosk
     bool is_tutor = false;
@@ -98,33 +164,44 @@ int main(int argc,  char **argv)
     }
 
     if (!is_tutor) {
-      // Create new Tutee for row if needed, otherwise add Visit to existing Tutee
+      // Create new Tutee if needed, otherwise add Visit to existing Tutee
       bool is_new_tutee = true;
-      for (auto t : tutees) {
-	if (0 == t.name.compare(this_name)) {  // Need to add Visit to Tutee
+      for(std::vector<Tutee>::size_type i = 0; i < tutees.size(); ++i) {
+	//      for(std::vector<Tutee>::iterator it = tutees.begin(); it != tutees.end(); ++it) {
+	
+	if (0 == tutees[i].name.compare(this_name)) {  // Tutee already exists
 	  is_new_tutee = false;
-	  // Add Visit to Tutee
+	  tutees[i].visits.push_back(Visit(ConvertCellToTM(row[0]), row[7]));  // Add Visit
+	  
+	  // Debug
+	  /*
+	  cout << "Existing tutee:\t" << this_name << "\tThis visit:\t" << row[0] << "\t" << row[7] << "\t" << tutees[i].visits.size() << " visits" << std::endl;
+	  cout << tutees[i].id_number << "\t" << tutees[i].name << "\t" << tutees[i].email << "\t" << tutees[i].classification << "\t" << tutees[i].major << std::endl;
+	  for (auto v : tutees[i].visits)
+	    cout << v.course_number << "\t" << v.visit_tm.tm_hour << "h" << v.visit_tm.tm_min << "m\t" << v.visit_tm.tm_mon << "/" << v.visit_tm.tm_mday << std::endl;
+	  */
+	  break;  // Quit searching for tutee name
 	}
-      }
+      }  // End loop through tutees
       
-      if (is_new_tutee) {  // Create new Tutee
-	Tutee this_tutee;
-	this_tutee.id_number = row[2];
-	this_tutee.name = this_name;
-	tutees.push_back(this_tutee);
+      if (is_new_tutee) {
+	//	cout << "New tutee:\t" << this_name << std::endl;  // Debug
+	tutees.push_back(Tutee(row[2], this_name, row[12], row[13], row[14]));  // Construct Tutee and add to tutees
+	tutees.back().visits.push_back(Visit(ConvertCellToTM(row[0]), row[7]));  // Add Visit to visits
       }
     }  // End treatment of non-tutor row
   }  // End loop through all rows
   
-  for (auto t : tutees)
-    cout << t.name << "\n";
-}
-/*
 
-  string id_number;
-  string name;
-  string email;
-  string classification;
-  string major;
-  std::vector<Visit> visits;
-*/
+  /*
+   * Perform analysis of data
+   */
+  if (0 == analysis_mode.compare("totals")) {
+    std::vector<Visit>::size_type num_visits = 0;
+    for (auto t : tutees)
+      num_visits += t.visits.size();
+    
+    cout << "The number of unique visitors is " << tutees.size() << "." << std::endl;
+    cout << "The total number of visits was " << num_visits << "." << std::endl;
+  }
+}
