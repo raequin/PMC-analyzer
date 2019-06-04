@@ -1,3 +1,4 @@
+#include <algorithm>
 #include<ctime>  // For day of week from date etc.
 #include <fstream>
 #include <iostream>
@@ -181,12 +182,12 @@ int main(int argc,  char **argv)
 	  
 	  // Debug
 	  /*
-	  cout << "Existing tutee:\t" << this_name << "\tThis visit:\t" << row[0] << "\t" << row[7] << "\t" << tutees[i].visits.size() << " visits" << std::endl;
-	  cout << tutees[i].id_number << "\t" << tutees[i].name << "\t" << tutees[i].email << "\t" << tutees[i].classification << "\t" << tutees[i].major << std::endl;
-	  for (auto v : tutees[i].visits)
+	    cout << "Existing tutee:\t" << this_name << "\tThis visit:\t" << row[0] << "\t" << row[7] << "\t" << tutees[i].visits.size() << " visits" << std::endl;
+	    cout << tutees[i].id_number << "\t" << tutees[i].name << "\t" << tutees[i].email << "\t" << tutees[i].classification << "\t" << tutees[i].major << std::endl;
+	    for (auto v : tutees[i].visits)
 	    cout << v.course_number << "\t" << v.visit_tm.tm_hour << "h" << v.visit_tm.tm_min << "m\t" << v.visit_tm.tm_mon << "/"
-		 << v.visit_tm.tm_mday << "/" << v.visit_tm.tm_year << "\t" << v.visit_tm.tm_wday << std::endl;
-	  cout << std::endl;
+	    << v.visit_tm.tm_mday << "/" << v.visit_tm.tm_year << "\t" << v.visit_tm.tm_wday << std::endl;
+	    cout << std::endl;
 	  */
 	  break;  // Quit searching for tutee name
 	}
@@ -200,17 +201,6 @@ int main(int argc,  char **argv)
       }
     }  // End treatment of non-tutor row
   }  // End loop through all rows
-
-
-  for (auto t : tutees) {
-    cout << t.id_number << "\t" << t.name << "\t" << std::endl;
-    
-    for (auto v : t.visits)
-      cout << v.course_number << "\t" << v.visit_tm.tm_hour << "h" << v.visit_tm.tm_min << "m\t" << v.visit_tm.tm_mon << "/"
-		 << v.visit_tm.tm_mday << "/" << v.visit_tm.tm_year << "\t" << v.visit_tm.tm_wday << std::endl;
-
-    cout << std::endl;
-  }
   
 
   /*
@@ -223,5 +213,50 @@ int main(int argc,  char **argv)
     
     cout << "The number of unique visitors is " << tutees.size() << "." << std::endl;
     cout << "The total number of visits was " << num_visits << "." << std::endl;
+  }
+
+  else if (0 == analysis_mode.compare("count_by_course")) {
+    // Get vector of course numbers
+    std::vector<std::string> course_numbers;
+    for (auto t : tutees) {
+      for (auto v : t.visits) {
+	if (std::find(course_numbers.begin(), course_numbers.end(), v.course_number) == course_numbers.end())
+	  course_numbers.push_back(v.course_number);
+      }  // End loop through visits
+    }  // End loop through tutees
+    std::sort(course_numbers.begin(), course_numbers.end());  // Sort the vector
+    
+    for (auto c : course_numbers) {
+      int course_count = 0;
+      int tutee_count = 0;
+      for (auto t : tutees) {
+	bool this_tutee_this_course = false;
+	for (auto v : t.visits) {
+	  if (0 == v.course_number.compare(c)) {
+	    ++course_count;
+	    if (!this_tutee_this_course) {
+	      this_tutee_this_course = true;
+	      ++tutee_count;
+	    }
+	  }
+	}  // End loop through visits
+      }  // End loop through tutees
+      
+      cout << c << ":\t" << course_count << "\tvisits\t" << tutee_count << "\tvisitors\t" << (float)course_count / (float)tutee_count << "\taverage\n";
+    }
+
+  }
+
+  
+  else if (0 == analysis_mode.compare("print_tutees_and_visits")) {
+    for (auto t : tutees) {
+      cout << t.id_number << "\t" << t.name << "\t" << std::endl;
+      
+      for (auto v : t.visits)
+	cout << v.course_number << "\t" << v.visit_tm.tm_hour << "h" << v.visit_tm.tm_min << "m\t" << v.visit_tm.tm_mon << "/"
+	     << v.visit_tm.tm_mday << "/" << v.visit_tm.tm_year << "\t" << v.visit_tm.tm_wday << std::endl;
+      
+      cout << std::endl;
+    }
   }
 }
