@@ -145,8 +145,11 @@ int main(int argc,  char **argv)
 {
   std::vector<Tutee> tutees;
   const uint8_t initial_line_num = 9;  // Where the data start on the txt file, starting at 0
-  std::vector<std::string> tutor_names  = {"Wiggins, Robert","Lin, Min Chih", "Williams, Bradley", "Marshall, Matthew"};
-  
+  std::vector<std::string> tutor_names  = {"Marshall, Matthew", "Wangenheim, Evan", "Hyatt, Haylee",
+					   "Freeman, Malik", "Wiggins, Robert", "Williams, Myles", "Williams, Bradley",
+					   "Daoudi, Karim", "Rogers, Cassidy", "Lin, Min Chih", "Colley, Jonny",
+					   "Amoakon, Lythia", "Patel, Jay", "Hiller, Aaron", "Giles, John",
+					   "Dedani, Ashween", "Freitas da Mata Filho, Luiz", "Mistry, Nensi"};
   string complete_path(argv[1]);
   string analysis_mode(argv[2]);
   std::ifstream file(complete_path);
@@ -258,5 +261,12 @@ int main(int argc,  char **argv)
       
       cout << std::endl;
     }
+  }
+
+
+  else if (0 == analysis_mode.compare("emails")) {
+    for (auto t : tutees)
+      cout << t.email << std::endl;
+
   }
 }
